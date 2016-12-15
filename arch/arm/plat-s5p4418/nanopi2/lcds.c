@@ -634,8 +634,9 @@ void nanopi2_get_lcd_res(int *w, int *h)
 EXPORT_SYMBOL(nanopi2_get_lcd_res);
 
 
-#if defined(CONFIG_TOUCHSCREEN_GOODIX) || defined(CONFIG_TOUCHSCREEN_FT5X0X) || \
-	defined(CONFIG_TOUCHSCREEN_IT7260) || \
+#if defined(CONFIG_TOUCHSCREEN_GOODIX) || defined(CONFIG_TOUCHSCREEN_GOODIX_MODULE) ||\
+	defined(CONFIG_TOUCHSCREEN_FT5X0X) || defined(CONFIG_TOUCHSCREEN_FT5X0X_MODULE) ||\
+	defined(CONFIG_TOUCHSCREEN_IT7260) || defined(CONFIG_TOUCHSCREEN_IT7260_MODULE) ||\
 	defined(CONFIG_TOUCHSCREEN_1WIRE)
 static unsigned int ctp_type = CTP_AUTO;
 
