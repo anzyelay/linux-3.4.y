@@ -588,7 +588,7 @@ static struct i2c_board_info __initdata ft5x0x_i2c_bdi = {
 };
 #endif
 
-#if defined(CONFIG_TOUCHSCREEN_IT7260)
+#if defined(CONFIG_TOUCHSCREEN_IT7260) || defined(CONFIG_TOUCHSCREEN_IT7260_MODULE)
 #define	IT7260_I2C_BUS		(2)
 
 static struct i2c_board_info __initdata it7260_i2c_bdi = {
@@ -596,6 +596,16 @@ static struct i2c_board_info __initdata it7260_i2c_bdi = {
 	.irq = PB_PIO_IRQ(CFG_IO_TOUCH_IRQ),
 };
 #endif
+
+#if defined(CONFIG_TOUCHSCREEN_GOODIX) || defined(CONFIG_TOUCHSCREEN_GOODIX_MODULE)
+#define	GOODIX_I2C_BUS		(2)
+
+static struct i2c_board_info __initdata goodix_i2c_bdi = {
+	I2C_BOARD_INFO("Goodix-TS", (0xBA>>1)),
+	.irq = PB_PIO_IRQ(CFG_IO_TOUCH_IRQ),
+};
+#endif
+
 
 #if defined(CONFIG_TOUCHSCREEN_1WIRE)
 #include <linux/platform_data/touchscreen-one-wire.h>
@@ -1829,10 +1839,16 @@ void __init nxp_board_devices_register(void)
 	i2c_register_board_info(FT5X0X_I2C_BUS, &ft5x0x_i2c_bdi, 1);
 #endif
 
-#if defined(CONFIG_TOUCHSCREEN_IT7260)
+#if defined(CONFIG_TOUCHSCREEN_IT7260) || defined(CONFIG_TOUCHSCREEN_IT7260_MODULE)
 	printk("plat: add touch(it7260) device\n");
 	i2c_register_board_info(IT7260_I2C_BUS, &it7260_i2c_bdi, 1);
 #endif
+
+#if defined(CONFIG_TOUCHSCREEN_GOODIX) || defined(CONFIG_TOUCHSCREEN_GOODIX_MODULE)
+	printk("plat: add touch(gt9157) device\n");
+	i2c_register_board_info(GOODIX_I2C_BUS, &goodix_i2c_bdi, 1);
+#endif
+
 
 #if defined(CONFIG_TOUCHSCREEN_1WIRE)
 	printk("plat: add onewire ts device\n");

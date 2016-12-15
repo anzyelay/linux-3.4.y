@@ -48,6 +48,7 @@
 #define GTP_HAVE_TOUCH_KEY    0
 #define GTP_POWER_CTRL_SLEEP  0
 #define GTP_ICS_SLOT_REPORT   0 
+#define GTP_TOUCH_SINGLE	  1
 
 #define GTP_AUTO_UPDATE       0    // auto update fw by .bin file as default
 #define GTP_HEADER_FW_UPDATE  0    // auto update fw by gtp_default_FW in gt9xx_firmware.h, function together with GTP_AUTO_UPDATE
@@ -62,7 +63,7 @@
 #define GTP_SLIDE_WAKEUP      0
 #define GTP_DBL_CLK_WAKEUP    0    // double-click wakeup, function together with GTP_SLIDE_WAKEUP
 
-#define GTP_DEBUG_ON          0
+#define GTP_DEBUG_ON          1
 #define GTP_DEBUG_ARRAY_ON    0
 #define GTP_DEBUG_FUNC_ON     0
 
@@ -157,6 +158,7 @@ extern u16 total_len;
     0x00,0x00,0x00,0x00,0x00,0x00,0xF6,0x01\
     }
 #endif
+#if 0
 #define CTP_CFG_GROUP1 {\
     0x50,0x00,0x04,0x58,0x02,0x0A,0x0D,0x00,0x01,0x3F,\
     0x19,0x0F,0x5A,0x46,0x03,0x05,0x00,0x00,0x00,0x00,\
@@ -178,7 +180,32 @@ extern u16 total_len;
     0x02,0x00,0xFF,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,\
     0x00,0x00,0x00,0x00,0x4E,0x01\
 }
-    
+#endif
+#if 1
+#define CTP_CFG_GROUP1 {\
+	0x41,0x20,0x03,0xE0,0x01,0x0A,0x0D,0x00,0x01,0x08,\
+	0x28,0x05,0x50,0x32,0x03,0x05,0x00,0x00,0x00,0x00,\
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x8A,0x2A,0x0C,\
+	0x17,0x15,0x31,0x0D,0x00,0x00,0x00,0xBC,0x02,0x2D,\
+	0x00,0x00,0x00,0x00,0x00,0x03,0x64,0x32,0x00,0x00,\
+	0x00,0x0F,0x55,0x94,0xC5,0x02,0x07,0x00,0x00,0x04,\
+	0x94,0x12,0x00,0x6E,0x19,0x00,0x50,0x24,0x00,0x3D,\
+	0x33,0x00,0x30,0x48,0x00,0x30,0x00,0x00,0x00,0x00,\
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+	0x00,0x00,0x02,0x04,0x06,0x08,0x0A,0x0C,0x0E,0x10,\
+	0x12,0x14,0x16,0x18,0xFF,0xFF,0x00,0x00,0x00,0x00,\
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,\
+	0x00,0x00,0x24,0x22,0x21,0x20,0x1F,0x1E,0x1D,0x1C,\
+	0x18,0x16,0x13,0x12,0x10,0x0F,0x0A,0x08,0x06,0x04,\
+	0x02,0x00,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0x00,0x00,\
+	0x00,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,\
+	0xFF,0xFF,0xFF,0xFF,0x8B,0x01\
+}
+#endif
+
+
 // TODO: define your config for Sensor_ID == 1 here, if needed
 #define CTP_CFG_GROUP2 {\
     }
@@ -200,9 +227,9 @@ extern u16 total_len;
     }
 
 // STEP_2(REQUIRED): Customize your I/O ports & I/O operations
-#define GTP_RST_PORT    CFG_IO_TOUCH_RESET_PIN
-#define GTP_INT_PORT    CFG_IO_TOUCH_PENDOWN_DETECT
-#define GTP_INT_IRQ     PB_PIO_IRQ(CFG_IO_TOUCH_PENDOWN_DETECT)
+#define GTP_RST_PORT    (PAD_GPIO_C + 8)
+#define GTP_INT_PORT    CFG_IO_TOUCH_IRQ
+#define GTP_INT_IRQ     PB_PIO_IRQ(GTP_INT_PORT)
 
 #define GTP_GPIO_AS_INPUT(pin)          do{\
                                             gpio_direction_input(pin);\
@@ -221,43 +248,15 @@ extern u16 total_len;
 #define GTP_IRQ_TAB                     {IRQ_TYPE_EDGE_RISING, IRQ_TYPE_EDGE_FALLING, IRQ_TYPE_LEVEL_LOW, IRQ_TYPE_LEVEL_HIGH}
 
 
-
-/*
-#define GTP_RST_PORT    S5PV210_GPJ3(6)
-#define GTP_INT_PORT    S5PV210_GPH1(3)
-#define GTP_INT_IRQ     gpio_to_irq(GTP_INT_PORT)
-#define GTP_INT_CFG     S3C_GPIO_SFN(0xF)
-
-#define GTP_GPIO_AS_INPUT(pin)          do{\
-                                            gpio_direction_input(pin);\
-                                            s3c_gpio_setpull(pin, S3C_GPIO_PULL_NONE);\
-                                        }while(0)
-#define GTP_GPIO_AS_INT(pin)            do{\
-                                            GTP_GPIO_AS_INPUT(pin);\
-                                            s3c_gpio_cfgpin(pin, GTP_INT_CFG);\
-                                        }while(0)
-#define GTP_GPIO_GET_VALUE(pin)         gpio_get_value(pin)
-#define GTP_GPIO_OUTPUT(pin,level)      gpio_direction_output(pin,level)
-#define GTP_GPIO_REQUEST(pin, label)    gpio_request(pin, label)
-#define GTP_GPIO_FREE(pin)              gpio_free(pin)
-#define GTP_IRQ_TAB                     {IRQ_TYPE_EDGE_RISING, IRQ_TYPE_EDGE_FALLING, IRQ_TYPE_LEVEL_LOW, IRQ_TYPE_LEVEL_HIGH}
-*/
-
+<<<<<<< HEAD
 // STEP_3(optional): Specify your special config info if needed
 #if GTP_CUSTOM_CFG
-  //#define GTP_MAX_HEIGHT   800
-  //#define GTP_MAX_WIDTH    480
-  //#define GTP_INT_TRIGGER  0            // 0: Rising 1: Falling
 #if GTP_CHANGE_X2Y
-//  #define GTP_MAX_HEIGHT   1280
-//  #define GTP_MAX_WIDTH    800
-  #define GTP_MAX_HEIGHT   1024
-  #define GTP_MAX_WIDTH    600
+  #define GTP_MAX_HEIGHT   800
+  #define GTP_MAX_WIDTH   480 
 #else
-//  #define GTP_MAX_HEIGHT   800
-//  #define GTP_MAX_WIDTH    1280
-  #define GTP_MAX_HEIGHT   600
-  #define GTP_MAX_WIDTH    1024
+  #define GTP_MAX_HEIGHT   480
+  #define GTP_MAX_WIDTH    800
 #endif
   #define GTP_INT_TRIGGER  1            // 0: Rising 1: Falling
 #else
@@ -271,6 +270,7 @@ extern u16 total_len;
 #if GTP_HAVE_TOUCH_KEY
     #define GTP_KEY_TAB  {KEY_MENU, KEY_HOME, KEY_BACK}
 #endif
+
 
 //***************************PART3:OTHER define*********************************
 #define GTP_DRIVER_VERSION    "V2.0<2013/08/28>"

@@ -66,6 +66,7 @@ u8 config[GTP_CONFIG_MAX_LENGTH + GTP_ADDR_LENGTH]
     
 #endif
 
+
 static s8 gtp_i2c_test(struct i2c_client *client);
 void gtp_reset_guitar(struct i2c_client *client, s32 ms);
 s32 gtp_send_cfg(struct i2c_client *client);
@@ -120,6 +121,8 @@ static DOZE_T doze_status = DOZE_DISABLED;
 static s8 gtp_enter_doze(struct goodix_ts_data *ts);
 #endif
 
+
+
 static u8 chip_gt9xxs = 0;  // true if ic is gt9xxs, like gt915s
 u8 grp_cfg_version = 0;
 
@@ -147,13 +150,11 @@ s32 gtp_i2c_read(struct i2c_client *client, u8 *buf, s32 len)
     msgs[0].addr  = client->addr;
     msgs[0].len   = GTP_ADDR_LENGTH;
     msgs[0].buf   = &buf[0];
-    //msgs[0].scl_rate = 300 * 1000;    // for Rockchip, etc.
-    
+   
     msgs[1].flags = I2C_M_RD;
     msgs[1].addr  = client->addr;
     msgs[1].len   = len - GTP_ADDR_LENGTH;
     msgs[1].buf   = &buf[GTP_ADDR_LENGTH];
-    //msgs[1].scl_rate = 300 * 1000;
 
     while(retries < 5)
     {
@@ -189,8 +190,6 @@ s32 gtp_i2c_read(struct i2c_client *client, u8 *buf, s32 len)
     return ret;
 }
 
-
-
 /*******************************************************
 Function:
     Write data to the i2c slave device.
@@ -215,7 +214,6 @@ s32 gtp_i2c_write(struct i2c_client *client,u8 *buf,s32 len)
     msg.addr  = client->addr;
     msg.len   = len;
     msg.buf   = buf;
-    //msg.scl_rate = 300 * 1000;    // for Rockchip, etc
 
     while(retries < 5)
     {
@@ -404,10 +402,7 @@ static void gtp_touch_down(struct goodix_ts_data* ts,s32 id,s32 x,s32 y,s32 w)
     GTP_ROTATE(x, y, ts->abs_x_max, ts->abs_y_max);
 #endif
 
-    //TNN, sce case	
-//    x = ts->abs_x_max - x;
-//    y = ts->abs_y_max - y;
-
+	input_report_key(ts->input_dev, BTN_TOUCH,1);
 #if GTP_ICS_SLOT_REPORT
     input_mt_slot(ts->input_dev, id);
     input_report_abs(ts->input_dev, ABS_MT_TRACKING_ID, id);
@@ -415,15 +410,18 @@ static void gtp_touch_down(struct goodix_ts_data* ts,s32 id,s32 x,s32 y,s32 w)
     input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, y);
     input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, w);
     input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, w);
-#else
+#elif !GTP_TOUCH_SINGLE
     input_report_abs(ts->input_dev, ABS_MT_POSITION_X, x);
     input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, y);
     input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, w);
     input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, w);
     input_report_abs(ts->input_dev, ABS_MT_TRACKING_ID, id);
     input_mt_sync(ts->input_dev);
+#else
+	input_report_abs(ts->input_dev, ABS_X, x);
+	input_report_abs(ts->input_dev, ABS_Y, ts->abs_y_max - y);
+	input_report_abs(ts->input_dev, ABS_PRESSURE, w);
 #endif
-
     GTP_DEBUG("ID:%d, X:%d, Y:%d, W:%d", id, x, y, w);
 }
 
@@ -437,14 +435,17 @@ Output:
 *********************************************************/
 static void gtp_touch_up(struct goodix_ts_data* ts, s32 id)
 {
+	input_report_key(ts->input_dev, BTN_TOUCH,0);
 #if GTP_ICS_SLOT_REPORT
     input_mt_slot(ts->input_dev, id);
     input_report_abs(ts->input_dev, ABS_MT_TRACKING_ID, -1);
     GTP_DEBUG("Touch id[%2d] release!", id);
-#else
+#elif !GPT_TOUCH_SINGLE
     input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0);
     input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, 0);
     input_mt_sync(ts->input_dev);
+#else
+	input_report_abs(ts->input_dev, ABS_PRESSURE, 0);
 #endif
 }
 
@@ -647,7 +648,6 @@ static void goodix_ts_work_func(struct work_struct *work)
     if (touch_num > 1)
     {
         u8 buf[8 * GTP_MAX_TOUCH] = {(GTP_READ_COOR_ADDR + 10) >> 8, (GTP_READ_COOR_ADDR + 10) & 0xff};
-
         ret = gtp_i2c_read(ts->client, buf, 2 + 8 * (touch_num - 1)); 
         memcpy(&point_data[12], &buf[2], 8 * (touch_num - 1));
     }
@@ -761,7 +761,6 @@ static void goodix_ts_work_func(struct work_struct *work)
         }
     }
 #else
-    input_report_key(ts->input_dev, BTN_TOUCH, (touch_num || key_value));
     if (touch_num)
     {
         for (i = 0; i < touch_num; i++)
@@ -785,6 +784,9 @@ static void goodix_ts_work_func(struct work_struct *work)
         #endif
         
             gtp_touch_down(ts, id, input_x, input_y, input_w);
+#if GTP_TOUCH_SINGLE
+			break;
+#endif
         }
     }
     else if (pre_touch)
@@ -805,7 +807,6 @@ static void goodix_ts_work_func(struct work_struct *work)
 
     pre_touch = touch_num;
 #endif
-
     input_sync(ts->input_dev);
 
 exit_work_func:
@@ -1182,6 +1183,7 @@ static s8 gtp_wakeup_sleep(struct goodix_ts_data * ts)
         gtp_reset_guitar(ts->client, 20);
     }
 #endif
+
 
     GTP_ERROR("GTP wakeup sleep failed.");
     return ret;
@@ -1694,20 +1696,24 @@ static s8 gtp_request_input_dev(struct goodix_ts_data *ts)
 #if GTP_CHANGE_X2Y
     GTP_SWAP(ts->abs_x_max, ts->abs_y_max);
 #endif
-
+#if !GTP_TOUCH_SINGLE
     input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X, 0, ts->abs_x_max, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y, 0, ts->abs_y_max, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_WIDTH_MAJOR, 0, 255, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
-    //input_set_abs_params(ts->input_dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
+    input_set_abs_params(ts->input_dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_TRACKING_ID, 0, 255, 0, 0);
+#else	
+	input_set_abs_params(ts->input_dev, ABS_X, 0,ts->abs_x_max, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_Y, 0,ts->abs_y_max, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_PRESSURE, 0,255, 0, 0);
+#endif
 
-    sprintf(phys, "input/ts");
-    ts->input_dev->name = goodix_ts_name;
-    ts->input_dev->phys = phys;
+    ts->input_dev->name = goodix_ts_name;//"Goodix Capacitive TouchScreen"
+    ts->input_dev->phys = "input/ts";
     ts->input_dev->id.bustype = BUS_I2C;
-    ts->input_dev->id.vendor = 0xDEAD;
-    ts->input_dev->id.product = 0xBEEF;
+    ts->input_dev->id.vendor = 0x0416;
+    ts->input_dev->id.product = 0x1001;
     ts->input_dev->id.version = 10427;
     
     ret = input_register_device(ts->input_dev);
@@ -2229,7 +2235,6 @@ Output:
     {
         GTP_ERROR("I2C communication ERROR!");
     }
-
     ret = gtp_read_version(client, &version_info);
     if (ret < 0)
     {
