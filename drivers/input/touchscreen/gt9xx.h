@@ -43,7 +43,7 @@
 //#define GTP_CUSTOM_CFG        0
 #define GTP_CUSTOM_CFG        1
 #define GTP_CHANGE_X2Y        0
-#define GTP_CHANGE_ROTATE180        1
+#define GTP_CHANGE_ROTATE180        0
 #define GTP_DRIVER_SEND_CFG   1
 #define GTP_HAVE_TOUCH_KEY    0
 #define GTP_POWER_CTRL_SLEEP  0
@@ -56,7 +56,7 @@
 
 #define GTP_COMPATIBLE_MODE   0    // compatible with GT9XXF
 
-#define GTP_CREATE_WR_NODE    1
+#define GTP_CREATE_WR_NODE    0
 #define GTP_ESD_PROTECT       0    // esd protection with a cycle of 2 seconds
 #define GTP_WITH_PEN          0
 
@@ -248,7 +248,6 @@ extern u16 total_len;
 #define GTP_IRQ_TAB                     {IRQ_TYPE_EDGE_RISING, IRQ_TYPE_EDGE_FALLING, IRQ_TYPE_LEVEL_LOW, IRQ_TYPE_LEVEL_HIGH}
 
 
-<<<<<<< HEAD
 // STEP_3(optional): Specify your special config info if needed
 #if GTP_CUSTOM_CFG
 #if GTP_CHANGE_X2Y
