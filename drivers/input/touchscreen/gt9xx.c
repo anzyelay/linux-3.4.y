@@ -440,7 +440,7 @@ static void gtp_touch_up(struct goodix_ts_data* ts, s32 id)
     input_mt_slot(ts->input_dev, id);
     input_report_abs(ts->input_dev, ABS_MT_TRACKING_ID, -1);
     GTP_DEBUG("Touch id[%2d] release!", id);
-#elif !GPT_TOUCH_SINGLE
+#elif !GTP_TOUCH_SINGLE
     input_report_abs(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0);
     input_report_abs(ts->input_dev, ABS_MT_WIDTH_MAJOR, 0);
     input_mt_sync(ts->input_dev);
@@ -633,6 +633,14 @@ static void goodix_ts_work_func(struct work_struct *work)
         }
     }
 #endif
+    if (finger == 0x00)
+    {
+        if (ts->use_irq)
+        {
+            gtp_irq_enable(ts);
+        }
+        return;
+    }
 
     if((finger & 0x80) == 0)
     {
@@ -782,8 +790,8 @@ static void goodix_ts_work_func(struct work_struct *work)
                 id = 0;   
             }
         #endif
-        
-            gtp_touch_down(ts, id, input_x, input_y, input_w);
+        	if(input_x <= ts->abs_x_max && input_y <= ts->abs_y_max && input_w <= 255)
+            	gtp_touch_down(ts, id, input_x, input_y, input_w);
 #if GTP_TOUCH_SINGLE
 			break;
 #endif
@@ -1696,17 +1704,17 @@ static s8 gtp_request_input_dev(struct goodix_ts_data *ts)
 #if GTP_CHANGE_X2Y
     GTP_SWAP(ts->abs_x_max, ts->abs_y_max);
 #endif
-#if !GTP_TOUCH_SINGLE
-    input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X, 0, ts->abs_x_max, 0, 0);
+#if GTP_TOUCH_SINGLE
+	input_set_abs_params(ts->input_dev, ABS_X, 0,ts->abs_x_max, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_Y, 0,ts->abs_y_max, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_PRESSURE, 0,255, 0, 0);
+#else	
+	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X, 0, ts->abs_x_max, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y, 0, ts->abs_y_max, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_WIDTH_MAJOR, 0, 255, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_PRESSURE, 0, 255, 0, 0);
     input_set_abs_params(ts->input_dev, ABS_MT_TRACKING_ID, 0, 255, 0, 0);
-#else	
-	input_set_abs_params(ts->input_dev, ABS_X, 0,ts->abs_x_max, 0, 0);
-	input_set_abs_params(ts->input_dev, ABS_Y, 0,ts->abs_y_max, 0, 0);
-	input_set_abs_params(ts->input_dev, ABS_PRESSURE, 0,255, 0, 0);
 #endif
 
     ts->input_dev->name = goodix_ts_name;//"Goodix Capacitive TouchScreen"
