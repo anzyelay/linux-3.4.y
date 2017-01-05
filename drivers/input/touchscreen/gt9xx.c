@@ -72,7 +72,7 @@ void gtp_reset_guitar(struct i2c_client *client, s32 ms);
 s32 gtp_send_cfg(struct i2c_client *client);
 void gtp_int_sync(s32 ms);
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#if 0 //disable the CONFIG_HAS_EARLYSUSPEND
 static void goodix_ts_early_suspend(struct early_suspend *h);
 static void goodix_ts_late_resume(struct early_suspend *h);
 #endif
@@ -791,10 +791,12 @@ static void goodix_ts_work_func(struct work_struct *work)
             }
         #endif
         	if(input_x <= ts->abs_x_max && input_y <= ts->abs_y_max && input_w <= 255)
+            {	
             	gtp_touch_down(ts, id, input_x, input_y, input_w);
 #if GTP_TOUCH_SINGLE
-			break;
+				break;
 #endif
+        	}
         }
     }
     else if (pre_touch)
@@ -1001,6 +1003,9 @@ static s8 gtp_enter_doze(struct goodix_ts_data *ts)
     return ret;
 }
 #else 
+
+#if 0 //disable the CONFIG_HAS_EARLYSUSPEND
+
 /*******************************************************
 Function:
     Enter sleep mode.
@@ -1061,6 +1066,8 @@ static s8 gtp_enter_sleep(struct goodix_ts_data * ts)
     return ret;
 }
 #endif 
+#endif
+#if 0 //disable the CONFIG_HAS_EARLYSUSPEND
 /*******************************************************
 Function:
     Wakeup from sleep.
@@ -1196,6 +1203,7 @@ static s8 gtp_wakeup_sleep(struct goodix_ts_data * ts)
     GTP_ERROR("GTP wakeup sleep failed.");
     return ret;
 }
+#endif
 #if GTP_DRIVER_SEND_CFG
 static s32 gtp_get_info(struct goodix_ts_data *ts)
 {
@@ -1731,7 +1739,7 @@ static s8 gtp_request_input_dev(struct goodix_ts_data *ts)
         return -ENODEV;
     }
     
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#if 0 //disable the CONFIG_HAS_EARLYSUSPEND
     ts->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
     ts->early_suspend.suspend = goodix_ts_early_suspend;
     ts->early_suspend.resume = goodix_ts_late_resume;
@@ -2314,7 +2322,7 @@ static int goodix_ts_remove(struct i2c_client *client)
     
     GTP_DEBUG_FUNC();
     
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#if 0 //disable the CONFIG_HAS_EARLYSUSPEND
     unregister_early_suspend(&ts->early_suspend);
 #endif
 
@@ -2348,7 +2356,7 @@ static int goodix_ts_remove(struct i2c_client *client)
     return 0;
 }
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#if 0 //disable the CONFIG_HAS_EARLYSUSPEND
 /*******************************************************
 Function:
     Early suspend function.
@@ -2677,7 +2685,7 @@ static struct i2c_driver goodix_ts_driver = {
     .probe      = goodix_ts_probe,
     .remove     = goodix_ts_remove,
 //#ifndef CONFIG_HAS_EARLYSUSPEND
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#if 0 //disable the CONFIG_HAS_EARLYSUSPEND
     .suspend    = goodix_ts_early_suspend,
     .resume     = goodix_ts_late_resume,
 #endif
